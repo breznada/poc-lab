@@ -27,4 +27,5 @@ jobs:
             kv-poc/data/github-deploy api_key | API_KEY
 
       - name: Use secret
-        run: echo "API_KEY sha256 prefix: $(printf '%s' "$API_KEY" | sha256sum | cut -c1-16)"
+        run: |
+          echo "API_KEY sha256 prefix: $(printf '%s' "$API_KEY" | sha256sum | cut -c1-16)"

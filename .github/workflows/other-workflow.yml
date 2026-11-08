@@ -1,0 +1,30 @@
+name: other-workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Show OIDC token claims
+        run: |
+          TOKEN=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=vault" | jq -r .value)
+          echo "$TOKEN" | cut -d. -f2 | python3 -c 'import sys,base64,json; p=sys.stdin.read().strip(); print(json.dumps(json.loads(base64.urlsafe_b64decode(p+"="*(-len(p)%4))),indent=2))'
+
+      - name: Read secret from Vault
+        uses: hashicorp/vault-action@v3
+        with:
+          url: https://cloud.swgsupport.cz:8200
+          method: jwt
+          path: jwt-github
+          role: deploy-production
+          jwtGithubAudience: vault
+          secrets: |
+            kv-poc/data/github-deploy api_key | API_KEY
+
+      - name: Use secret
+        run: echo "API_KEY sha256 prefix: $(printf '%s' "$API_KEY" | sha256sum | cut -c1-16)"
